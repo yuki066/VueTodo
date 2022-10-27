@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>VueCounter</title>
+        <meta name="description" content="Title">
+        <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
+        <!-- <link rel="stylesheet" href="css/style.css"> -->
+    </head>
+    <style>
+        .done {
+            opacity: .3;
+            text-decoration: line-through;
+        }
+
+        .edit {
+            /* input */
+            display: none;
+            /* 最初は非表示 */
+        }
+
+        /* 親要素にクラスが付与された場合input要素を表示 */
+        .editing .edit {
+            /* li > input */
+            display: inline;
+            /* 改行無しで右に表示 */
+        }
+
+        .error {
+            color: #900;
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+    </style>
+    <body class="h-full">
+        <div id="app" class="py-40 bg-gray-100 h-full">
+            <div class="max-w-2xl mx-auto overflow-hidden bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900">{{ state.title }}</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Build a Todo List App with VueJS</p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-col-auto">
+                            <div v-if="state.error" class="error py-5 px-5 mb-3 inline-flex text-center tracking-widest rounded bg-red-100 text-red-800">{{ state.errorMessage }}</div>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-10 text-sm text-gray-500">Todo</span>
+                                <input v-model="state.newMsg" @keyup.enter="addTodo" autofocus type="text" name="company-website" id="company-website" class="p-4 border block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Todo Message">
+                            </div>
+                        </div>
+                        <div v-for="(todo, index) in state.todos" v-bind:class="{done: todo.completed,editing: todo === state.editObj,['bg-gray-100']: (index % 2) === 0}" v-bind:key="todo.id" class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-9 sm:gap-4 sm:px-6">
+                            <dt class="text-sm pl-10 mt-3 font-medium text-gray-500 sm:col-span-3">
+                                {{todo.id}}
+                                <input type="checkbox" v-model="todo.completed" class="text-base font-medium text-gray-900 ml-4">
+                            </dt>
+                            <dd class="mt-1 text-2xl font-bold text-gray-900 sm:mt-0 sm:col-span-4 ">
+                                <label @dblclick="editTodo(todo)"> {{ todo.msg }} </label>
+                                <input class="edit" v-model="state.editMsg" @keyup.enter="updateTodo(todo)">
+                            </dd>
+                            <dd class="sm:mt-0 sm:col-span-2 ">
+                                <button @click="deleteTodo(todo)" class="line-flex">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-6 w-5 mr-1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>Delete
+                                </button>
+                            </dd>
+                        </div>
+                        <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-12 sm:gap-4 sm:px-6">
+                            <dt class="text-sm pl-10 mt-3 font-medium text-gray-500 sm:col-span-3">登録件数</dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:col-span-9 sm:mt-0">
+                                <ul role="list" class="divide-y divide-gray-200 rounded-md border border-gray-200">
+                                    <li class="flex items-center justify-between py-3 pl-3 pr-4 text-sm">
+                                        <div class="flex w-0 flex-1 items-center">
+                                            <!-- Heroicon name: mini/paper-clip -->
+                                            <svg class="h-5 w-5 flex-shrink-0 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M15.621 4.379a3 3 0 00-4.242 0l-7 7a3 3 0 004.241 4.243h.001l.497-.5a.75.75 0 011.064 1.057l-.498.501-.002.002a4.5 4.5 0 01-6.364-6.364l7-7a4.5 4.5 0 016.368 6.36l-3.455 3.553A2.625 2.625 0 119.52 9.52l3.45-3.451a.75.75 0 111.061 1.06l-3.45 3.451a1.125 1.125 0 001.587 1.595l3.454-3.553a3 3 0 000-4.242z" clip-rule="evenodd" />
+                                            </svg>
+                                            <p class="m-auto text-gray-400">{{ todoCount() }}</p>
+                                        </div>
+                                        <div class="ml-4 flex-shrink-0">
+                                            <p v-if="existsTodo()" class="font-bold  hover:text-indigo-500 text-gray-400">個</ｐ>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+            <!-- <input v-model="state.newMsg" @keyup.enter="addTodo" autofocus>
+            <p v-if="state.error == false" class="error">※値を入力してください</p>
+            <p class="text-center">{{state.error}}</p>
+            <ul>
+                <li v-for="todo in state.todos" v-bind:class="{done: todo.completed,editing: todo === state.editObj}" v-bind:key="todo.id">
+                    <input type="checkbox" v-model="todo.completed">&nbsp; <label @dblclick="editTodo(todo)"> {{ todo.msg }} </label>&nbsp; <input class="edit" v-model="state.editMsg" @keyup.enter="updateTodo(todo)">&nbsp; <button @click="deleteTodo(todo)">X</button>
+                </li>
+            </ul>
+            <div v-if="existsTodo()" > 登録件数<strong>{{ todoCount() }}</strong>個 </div>
+        </div> -->
+        <script src="https://unpkg.com/vue@next"></script>
+        <script>
+            Vue.createApp({
+                setup() {
+                    const state = Vue.reactive({
+                        title: 'CRUD Todo',
+                        newMsg: '',
+                        todos: [],
+                        editObj: null, // 編集用リストの一時保持
+                        editMsg: '',   // 編集用タイトルの一時保持
+                        error: false, // 表示判定フラグ
+                        errorMessage: '' // エラーメッセージ
+                    })
+                    Vue.onMounted(() => {
+                        getTodos()
+                    })
+
+                    const addTodo = () => {
+                        if (!state.newMsg) {
+                            state.error = 'false'
+                        } else {
+                            state.todos.push({
+                                id: (new Date()).getTime().toString().slice(-4),
+                                completed: false,
+                                msg: state.newMsg,
+                            })
+                            state.error = 'true'
+                        }
+                        state.newMsg = ''
+                        addTodos()
+                    }
+
+                    const editTodo = (todoObj) => {
+                        state.editObj = todoObj // 1件分のオブジェクトを代入
+                        state.editMsg = todoObj.msg // 1件分のタイトルを代入
+                    }
+
+                    const deleteTodo = (todoObj) => {
+                        const delIndex = state.todos.indexOf(todoObj)
+                        state.todos.splice(delIndex, 1)
+                        addTodos()
+                    }
+
+                    const updateTodo = (todoObj) => {
+                        // 更新タイトルを元のオブジェクトのタイトルに再代入
+                        todoObj.msg = state.editMsg
+                        state.editObj = null // 編集用リストの初期化
+                        state.editMsg = ''  // 編集用タイトルの初期化
+                        addTodos()
+                    }
+                    const addTodos = () => {
+                        localStorage.setItem('todos', JSON.stringify(state.todos))
+                    }
+                    const getTodos = () => {
+                        const todos = localStorage.getItem('todos')
+                        if (todos) {
+                            state.todos = JSON.parse(todos)
+                        }
+                    }
+                    const existsTodo = () => {
+                        // オブジェクトが1以上ならtrueを返す
+                        return state.todos.length > 0
+                    }
+                    const todoCount = () => {
+                        // オブジェクトの個数を文字列で返す
+                        return state.todos.length.toString()
+                    }
+                    return {
+                        state,
+                        addTodo,
+                        editTodo,
+                        deleteTodo,
+                        updateTodo,
+                        existsTodo,
+                        todoCount
+                    }
+                }
+            }).mount('#app')
+        </script>
+    </body>
+</html>
